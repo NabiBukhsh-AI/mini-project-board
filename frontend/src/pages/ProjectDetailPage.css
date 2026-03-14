@@ -1,0 +1,93 @@
+/* =============================================================
+   ProjectDetailPage.css
+   ============================================================= */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.breadcrumb a:hover { text-decoration: underline; }
+
+.breadcrumb__sep {
+  color: #cbd5e1;
+}
+
+/* ── Kanban layout ── */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .kanban {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kanban__column {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.kanban__column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.kanban__column-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kanban__column-count {
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+}
+
+.kanban__tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  min-height: 120px;
+}
+
+.kanban__empty {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  text-align: center;
+  margin: auto 0;
+  padding: 1.5rem 0;
+}
+
+/* ── Flat list (filtered view) ── */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
