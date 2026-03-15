@@ -18,9 +18,20 @@ const app = express();
 
 // ── Security / parsing middleware ────────────────────────────
 
+// Support multiple allowed origins via comma-separated FRONTEND_URL
+// e.g. "http://localhost:3000,http://127.0.0.1:3000"
+const allowedOrigins = env.FRONTEND_URL.split(",").map((o) => o.trim());
+
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. Postman, curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     credentials: true,
   })
 );

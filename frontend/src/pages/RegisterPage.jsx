@@ -6,8 +6,27 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as authService from "../services/auth.service";
-import { getErrorMessage } from "../utils/helpers";
 import "./AuthPage.css";
+
+/**
+ * Extracts field-level errors from an Axios error response.
+ * Backend returns: { errors: { email: ["msg"], name: ["msg"] } }
+ * Falls back to a single top-level message if no field errors exist.
+ */
+const extractErrors = (err) => {
+  const fieldErrors = err?.response?.data?.errors;
+  if (fieldErrors && typeof fieldErrors === "object") {
+    return Object.fromEntries(
+      Object.entries(fieldErrors).map(([key, msgs]) => [key, msgs[0]])
+    );
+  }
+  return {
+    _banner:
+      err?.response?.data?.message ||
+      err?.message ||
+      "Something went wrong. Please try again.",
+  };
+};
 
 const RegisterPage = () => {
   const { login } = useAuth();
@@ -15,20 +34,32 @@ const RegisterPage = () => {
 
   const [fields, setFields] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
-  const set = (key) => (e) => setFields((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    setFields((f) => ({ ...f, [key]: e.target.value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const pw = fields.password;
+  const rules = [
+    { label: "At least 8 characters",         met: pw.length >= 8 },
+    { label: "One uppercase letter (A–Z)",     met: /[A-Z]/.test(pw) },
+    { label: "One number (0–9)",               met: /[0-9]/.test(pw) },
+    { label: "One special character (!@#...)", met: /[^A-Za-z0-9]/.test(pw) },
+  ];
+  const allRulesMet = rules.every((r) => r.met);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      setError("");
+      setErrors({});
       const { user, token } = await authService.register(fields);
       login(user, token);
       navigate("/projects");
     } catch (err) {
-      setError(getErrorMessage(err));
+      setErrors(extractErrors(err));
     } finally {
       setLoading(false);
     }
@@ -43,35 +74,38 @@ const RegisterPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          {error && <p className="form-error">{error}</p>}
+          {errors._banner && (
+            <div className="form-error form-error--banner">
+              <span>⚠️</span> {errors._banner}
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
             <input
               id="name"
               type="text"
-              className="form-input"
+              className={`form-input ${errors.name ? "form-input--error" : ""}`}
               value={fields.name}
               onChange={set("name")}
               placeholder="Jane Smith"
-              required
               autoComplete="name"
-              minLength={2}
             />
+            {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
 
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
               id="email"
-              type="email"
-              className="form-input"
+              type="text"
+              className={`form-input ${errors.email ? "form-input--error" : ""}`}
               value={fields.email}
               onChange={set("email")}
               placeholder="you@example.com"
-              required
               autoComplete="email"
             />
+            {errors.email && <span className="field-error">{errors.email}</span>}
           </div>
 
           <div className="form-group">
@@ -79,20 +113,28 @@ const RegisterPage = () => {
             <input
               id="password"
               type="password"
-              className="form-input"
+              className={`form-input ${errors.password ? "form-input--error" : ""}`}
               value={fields.password}
               onChange={set("password")}
               placeholder="Min. 8 characters"
-              required
               autoComplete="new-password"
-              minLength={8}
             />
+            {errors.password && <span className="field-error">{errors.password}</span>}
+            {pw.length > 0 && (
+              <ul className="password-rules">
+                {rules.map((rule) => (
+                  <li key={rule.label} className={rule.met ? "rule--met" : "rule--unmet"}>
+                    {rule.met ? "✓" : "✗"} {rule.label}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <button
             type="submit"
             className="btn btn--primary btn--full"
-            disabled={loading}
+            disabled={loading || !allRulesMet}
           >
             {loading ? "Creating account…" : "Create Account"}
           </button>

@@ -33,20 +33,24 @@ api.interceptors.request.use(
 );
 
 // ── Response interceptor ─────────────────────────────────────
-// Unwrap the data envelope and handle 401 globally
+// Only trigger the logout/redirect flow when a stored token is
+// rejected (expired session). A 401 on /auth/login or /auth/register
+// is a normal failed attempt — let it propagate to the catch block.
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid — clear storage and redirect
+    const isAuthEndpoint =
+      error.config?.url?.includes("/auth/login") ||
+      error.config?.url?.includes("/auth/register");
+
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Token expired or revoked — clear session and send to login
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // Avoid importing navigate here (circular deps) — use window
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
+      window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
